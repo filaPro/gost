@@ -1,11 +1,23 @@
 <html>
 <head>
 	<script type="text/javascript" src="xlsx.full.min.js"></script>
+	<script type="text/javascript" src="jquery-2.1.4.min.js"></script>
 	<script src="script.js"></script>
 </head>
 <body>
-	123
-		<input id="myInput" type="file" multiple="multiple" name="files[]" />
-		<button id="myButton">1231231</button>
+	<input id="myInput" type="file" multiple="multiple" name="files[]" />
+	<button id="btn_load">load</button>
+	<select id=sheet_id>
+	</select>
+	<button id="btn_parse">parse</button>
+	<button id="btn_calc">calc</button>
+
+	<div id=table_cont>
+	</div>
 </body>
+<style>
+table, td, th {
+	border: 1px solid black;
+}
+</style>
 </html>
