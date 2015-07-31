@@ -10,7 +10,7 @@ function Args(id, arr) {
 	this.arr = arr;
 }
 
-function Block(arr) {
+function Block(arr) { 
 	this.coords = arr;
 	this.intersect = function(block2) {
 		if (this.coords.length != block2.coords.length)
@@ -26,20 +26,115 @@ function Block(arr) {
 				return null;
 		}
 	}
+} 
+
+var fullOrderMin = [], fullOrderMax = []
+function fullOrderInc(iter) {
+	var i = 0;
+	while (i < iter.length) {
+		iter[i]++;
+		if (iter[i] > fullOrderMax[i]) {
+			iter[i] = fullOrderMin[i];
+			i++;
+			continue;
+		}
+		break;
+	}
+	if (iter == fullOrderMin)
+		return null;
+	return iter;
 }
 
-function BlocksSet(id, block) {
+function binIndexOf(arr, searchElement) {
+	var minIndex = 0;
+	var maxIndex = arr.length - 1;
+	var currentIndex;
+	var currentElement;
+
+	while (minIndex <= maxIndex) {
+		currentIndex = (minIndex + maxIndex) / 2 | 0;
+		currentElement = arr[currentIndex];
+
+		if (currentElement < searchElement) {
+			minIndex = currentIndex + 1;
+		}
+		else if (currentElement > searchElement) {
+			maxIndex = currentIndex - 1;
+		}
+		else {
+			return currentIndex;
+		}
+	}
+
+	return -1;
+}
+
+ function BlocksSet(id, block) {
 	this.id = id;
 	this.plus = [new Block(block)]
 	this.minus = []
-	this.applyMinus = function() {
+ 	this.applyMinus = function() {
 		var frag = [];
-		for (var i = 0; i < this.plus[0].length; i++)
-			frag.push({});
+		for (var i in this.plus[0].coords) {
+			frag.push([]);
+			frag[i].push(this.plus[0].coords[i][0]);
+			frag[i].push(this.plus[0].coords[i][1]);
+		}
 		for (var b in this.minus) {
 			for (var c in this.minus[b].coords) {
 				var d = this.minus[b].coords[c];
+				frag[c].push(d[0]);
+				frag[c].push(d[1]);
 			}
+		}
+		for (var i in frag) {
+			frag[i].sort();
+			for (var j = frag[i][frag[i].length - 1]; j > 0; j--)
+				if (frag[i][j] == frag[i][j - 1])
+					frag[i].splice(j, 1);
+		}
+
+		var iterArr = [];
+		fullOrderMax = fullOrderMin = []
+		for (var i in frag) {
+			fullOrderMin[i] = 0;
+			fullOrderMax[i] = frag[i].length - 2;
+		}
+		var iter = fullOrderMin;
+		while (iter) {
+			//var tmpArr = []
+			//for (var i in iter.length)
+			//	tmpArr.push([frag[i][iter[i]], frag[i][iter[i + 1]]]);
+			//this.result.push(new Block(tmpArr));
+			iterArr.push(iter);
+			iter = fullOrderInc(iter);
+		}
+
+		for (var i in this.minus) {
+			fullOrderMax = fullOrderMin = []
+			for (var j in this.minus[j].coords) {
+				fullOrderMin[j] = binIndexOf(frag[j], this.minus[i].coords[j][0]);
+				fullOrderMax[j] = binIndexOf(frag[j], this.minus[i].coords[j][1] - 1);
+			}
+			var iter = fullOrderMin;
+			while (iter) {
+				var iterNumber = 0;
+				for (var k in frag)
+					iterNumber += iter[k] * Math.pow(frag[k].length, iter.length - k - 1);
+				delete iterArr[iterNumber];
+				iter = fullOrderInc(iter);
+			}	
+		}
+
+		this.plus = []
+		for (var i in iterArr) {
+			var iter = iterArr[i];
+			if (!iter)
+				continue;
+			var tmpArr = [];
+			for (var j in iter.length)
+				tmpArr.push([frag[j][iter[j]], frag[j][iter[j + 1]]]);
+			this.plus.push(new Block(tmpArr));
 		}
 	}
 }
@@ -125,11 +220,13 @@ function parseXls() {
 			arr.push([getCell(sheet, x, y), getCell(sheet, x + 1, y)]);
 		resultList.push(new BlocksSet(y - yMin, arr));
 	}
+	for (var i in resultList)
+		resultList[i].applyMinus();
 
 	sheetG = sheet;
 	console.log(sheet, resultList, argsList);
 	return true;
-}
+} 
 
 function handleFile(e) {
 	var files = input.files;
@@ -151,6 +248,7 @@ function loadData(){
 		alert("parsing error:" + err);
 		return;
 	}
+
 	printResults();
 }
 function calc(){}
