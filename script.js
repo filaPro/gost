@@ -90,7 +90,7 @@ function BlocksSet(id, block) {
 		}
 		for (var i in frag) {
 			frag[i].sort();
-			for (var j = frag[i][frag[i].length - 1]; j > 0; j--)
+			for (var j = frag[i].length - 1; j > 0; j--)
 				if (frag[i][j] == frag[i][j - 1])
 					frag[i].splice(j, 1);
 		}
