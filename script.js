@@ -2,7 +2,7 @@ var bload, input;
 var argsList = [], resultList = [];
 var argsHeader = [], blocksHeader = [];
 var workbook, sheet;
-var tableCont, table
+var tableCont, table;
 
 
 function Args(id, arr) {
@@ -16,19 +16,20 @@ function Block(arr) {
 		if (this.coords.length != block2.coords.length)
 			return null;
 		var result = new Block([]);
-		var c1 = this.coords[i], c2 = block2.coords[i];
-		for (var i = 0; i < this.coords.length; i++) {
+		for (var i in this.coords) {
+			var c1 = this.coords[i], c2 = block2.coords[i];
 			if (c2[0] >= c1[0] && c2[0] <= c1[1])
-				result.coords.push([c2[0], Math.min(c1[0], c2[1])]);
+				result.coords.push([c2[0], Math.min(c1[1], c2[1])]);
 			else if (c2[1] >= c1[0] && c2[1] <= c1[1])
 				result.coords.push([Math.max(c1[0], c2[0]), c2[1]]);
 			else
 				return null;
 		}
+		return result;
 	}
-} 
+ } 
 
-var fullOrderMin = [], fullOrderMax = []
+var fullOrderMin, fullOrderMax
 function fullOrderInc(iter) {
 	var i = 0;
 	while (i < iter.length) {
@@ -40,7 +41,7 @@ function fullOrderInc(iter) {
 		}
 		break;
 	}
-	if (iter == fullOrderMin)
+	if (iter.toString() == fullOrderMin.toString())
 		return null;
 	return iter;
 }
@@ -69,10 +70,10 @@ function binIndexOf(arr, searchElement) {
 	return -1;
 }
 
- function BlocksSet(id, block) {
+function BlocksSet(id, block) {
 	this.id = id;
-	this.plus = [new Block(block)]
-	this.minus = []
+	this.plus = [new Block(block)];
+	this.minus = [];
  	this.applyMinus = function() {
 		var frag = [];
 		for (var i in this.plus[0].coords) {
@@ -95,45 +96,44 @@ function binIndexOf(arr, searchElement) {
 		}
 
 		var iterArr = [];
-		fullOrderMax = fullOrderMin = []
+		fullOrderMax = [];
+		fullOrderMin = [];
 		for (var i in frag) {
-			fullOrderMin[i] = 0;
-			fullOrderMax[i] = frag[i].length - 2;
+			fullOrderMin.push(0);
+			fullOrderMax.push(frag[i].length - 2);
 		}
-		var iter = fullOrderMin;
+		var iter = fullOrderMin.slice(0);
 		while (iter) {
-			//var tmpArr = []
-			//for (var i in iter.length)
-			//	tmpArr.push([frag[i][iter[i]], frag[i][iter[i + 1]]]);
-			//this.result.push(new Block(tmpArr));
-			iterArr.push(iter);
+			iterArr.push(iter.slice(0));
 			iter = fullOrderInc(iter);
 		}
 
 		for (var i in this.minus) {
-			fullOrderMax = fullOrderMin = []
+			fullOrderMax = [];
+			fullOrderMin = [];
 			for (var j in this.minus[j].coords) {
 				fullOrderMin[j] = binIndexOf(frag[j], this.minus[i].coords[j][0]);
-				fullOrderMax[j] = binIndexOf(frag[j], this.minus[i].coords[j][1] - 1);
+				fullOrderMax[j] = binIndexOf(frag[j], this.minus[i].coords[j][1]) - 1;
 			}
-			var iter = fullOrderMin;
+			var iter = fullOrderMin.slice(0);
 			while (iter) {
-				var iterNumber = 0;
-				for (var k in frag)
-					iterNumber += iter[k] * Math.pow(frag[k].length, iter.length - k - 1);
+				var iterNumber = iter[iter.length - 1];
+				for (var k = iter.length - 1; k > 0; k--)
+					iterNumber = iterNumber * (frag[k].length - 1) + iter[k - 1];
 				delete iterArr[iterNumber];
 				iter = fullOrderInc(iter);
 			}	
 		}
 
-		this.plus = []
+		this.plus = [];
+		this.minus = [];
 		for (var i in iterArr) {
 			var iter = iterArr[i];
 			if (!iter)
 				continue;
 			var tmpArr = [];
-			for (var j in iter.length)
-				tmpArr.push([frag[j][iter[j]], frag[j][iter[j + 1]]]);
+			for (var j in iter)
+				tmpArr.push([frag[j][iter[j]], frag[j][iter[j] + 1]]);
 			this.plus.push(new Block(tmpArr));
 		}
 	}
@@ -153,10 +153,10 @@ function prepareXls(w){
 	for (var i in w.SheetNames)
 		jQuery("<option>").val(i).text(w.SheetNames[i]).appendTo(sel);
 }
+
 function parseXls() {
 	snum = jQuery("#sheet_id").val();
 	var sheet = workbook.Sheets[workbook.SheetNames[snum]];
-	console.log(sheet, snum);
 	var range = XLSX.utils.decode_range(sheet['!ref']);
 	if (!range)
 		return 'no !ref in sheet';
@@ -164,7 +164,7 @@ function parseXls() {
 	var baseArgs, endArgs, baseBlocks, endBlocks;
 	loop: 
 		for (var y = 0; y < 5; y++)
-			for (var x = 0; x < range.e.c; x++) {
+			for (var x = 0; x <= range.e.c; x++) {
 				var v = getCell(sheet, x, y);
 				if (!v)
 					continue;
@@ -185,12 +185,11 @@ function parseXls() {
 		return 'wrong positions of anchors';
 
 	argsHeader = [], blocksHeader = [];
-	for (var y = baseArgs.r+1; y <= baseArgs.r+2; y++){
+	for (var y = baseArgs.r + 1; y <= baseArgs.r + 2; y++){
 		var q = [];
 		for (var x = baseArgs.c; x <= endArgs.c; x++){
 			var v = getCell(sheet, x, y)
 			q.push(v);
-			console.log(sheet, x, y, v)
 		}
 		argsHeader.push(q);
 
@@ -204,7 +203,7 @@ function parseXls() {
 
 	var yMin = baseArgs.r + 3; 
 	loop1:
-	for (var y = yMin; y < range.e.r; y++) {
+	for (var y = yMin; y <= range.e.r; y++) {
 		var arr = [];
 		for (var x = baseArgs.c; x <= endArgs.c; x++){
 			var v = getCell(sheet, x, y);
@@ -214,23 +213,28 @@ function parseXls() {
 		}
 		argsList.push(new Args(y - yMin, arr));
 	}
-	for (var y = yMin; y < range.e.r; y++) {
+	for (var y = yMin; y <= range.e.r; y++) {
 		var arr = [];
 		for (var x = baseBlocks.c; x < endBlocks.c; x += 2)
 			arr.push([getCell(sheet, x, y), getCell(sheet, x + 1, y)]);
 		resultList.push(new BlocksSet(y - yMin, arr));
 	}
 	for (var i in resultList)
+		for (var j in resultList)
+			if (i != j) {
+				var inter = resultList[i].plus[0].intersect(resultList[j].plus[0]);
+				if (inter)
+					resultList[i].minus.push(inter);
+			}
+	for (var i in resultList)
 		resultList[i].applyMinus();
+	console.log("resultList", resultList);
 
-	sheetG = sheet;
-	console.log(sheet, resultList, argsList);
 	return true;
 } 
 
 function handleFile(e) {
 	var files = input.files;
-	console.log("open files", files);
 	var f = files[0];
 	var reader = new FileReader();
 	var name = f.name;
@@ -251,6 +255,7 @@ function loadData(){
 
 	printResults();
 }
+
 function calc(){}
 
 function printResults(){
@@ -291,7 +296,7 @@ function printResults(){
 
 	tableCont.append(table);
 
-	console.log(tableCont, table)
+	//console.log(tableCont, table)
 }
 
 window.onload = function() {
