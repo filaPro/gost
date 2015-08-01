@@ -137,6 +137,26 @@ function BlocksSet(id, block) {
 			this.plus.push(new Block(tmpArr));
 		}
 	}
+	this.toString = function(){
+		var res = ""
+		for (var i in this.plus){
+			if (i > 0)
+				res += " and ";
+			res += JSON.stringify(this.plus[i].coords);
+		}
+
+		var excl = ""
+		for (var i in this.minus){
+			if (i > 0)
+				excl += " and ";
+			excl += JSON.stringify(this.minus[i].coords);
+		}
+
+		if (excl.length > 0)
+			res += " exclude (" + excl + ")";
+
+		return res
+	}
 }
 
 function getCell(sheet, x, y) {
@@ -293,7 +313,7 @@ function printResults(){
 		for (var x in a.arr)
 			jQuery("<td>").text(a.arr[x]).appendTo(row);
 
-		jQuery("<td>").text(JSON.stringify(resultList[y])).appendTo(row);
+		jQuery("<td>").text(resultList[y].toString()).appendTo(row);
 
 		table.append(row);
 	}
