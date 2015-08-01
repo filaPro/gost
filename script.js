@@ -111,7 +111,7 @@ function BlocksSet(id, block) {
 		for (var i in this.minus) {
 			fullOrderMax = [];
 			fullOrderMin = [];
-			for (var j in this.minus[j].coords) {
+			for (var j in this.minus[i].coords) {
 				fullOrderMin[j] = binIndexOf(frag[j], this.minus[i].coords[j][0]);
 				fullOrderMax[j] = binIndexOf(frag[j], this.minus[i].coords[j][1]) - 1;
 			}
