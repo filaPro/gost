@@ -5,12 +5,25 @@
 	<script type="text/javascript" src="script.js"></script>
 </head>
 <body>
-	<input id="myInput" type="file" multiple="multiple" name="files[]" />
-	<button id="btn_load">load</button>
-	<select id=sheet_id>
-	</select>
-	<button id="btn_parse">parse</button>
-	<button id="btn_calc">calc</button>
+	<div class="step1 steps">
+		<div>Выберите xlsx файл и нажмите Загрузить.</div>
+		<input id="myInput" type="file" multiple="multiple" name="files[]" />
+		<button id="btn_load">Загрузить</button>
+	</div>
+	<div class="step2 steps">
+		<div>Выберите страницу и нажмите Обработать.</div>
+		<select id=sheet_id></select>
+		<button id="btn_parse">Обработать</button>
+	</div>
+	<div class="step3 steps">
+		<div>Проверьте данные и нажмите Вычислить.</div>
+		<button id="btn_calc">Вычислить</button>
+	</div>
+	<div class=error>
+	</div>
+	<div class="step_restart">
+		<button id="btn_restart">Начать все сначала</button>
+	</div>
 
 	<div id=table_cont>
 	</div>
@@ -18,6 +31,9 @@
 <style>
 table, td, th {
 	border: 1px solid black;
+}
+div {
+	margin : 10px;
 }
 </style>
 </html>

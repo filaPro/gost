@@ -240,7 +240,7 @@ function parseXls() {
 			var min = getCell(sheet, x, y);
 			var max = getCell(sheet, x + 1, y);
 			if (typeof(min) != 'number' || typeof(max) != 'number' || min > max)
-				return 'неверный формат данных в диапазоне ' + XLSX.utils.encode_cell({c : x, r : y} + ':' XLSX.utils.encode_cell({c : x + 1, r : y});
+				return 'неверный формат данных в диапазоне ' + XLSX.utils.encode_cell({c : x, r : y}) + ':' + XLSX.utils.encode_cell({c : x + 1, r : y});
 			arr.push([getCell(sheet, x, y), getCell(sheet, x + 1, y)]);
 		}
 		resultList.push(new BlocksSet(y - yMin, arr));
@@ -251,6 +251,9 @@ function parseXls() {
 
 function handleFile(e) {
 	var files = input.files;
+	if (!files || files.length < 1) {
+		return "Вам стоит выбрать файл"
+	}
 	var f = files[0];
 	var reader = new FileReader();
 	var name = f.name;
@@ -260,16 +263,8 @@ function handleFile(e) {
 		prepareXls(workbook);
 	};
 	reader.readAsBinaryString(f);
-}
 
-function loadData(){
-	err = parseXls();
-	if(err !== true){
-		alert("ошибка парсинга файла: " + err);
-		return;
-	}
-
-	printResults();
+	return true
 }
 
 function calc(){
@@ -326,17 +321,52 @@ function printResults(){
 	tableCont.append(table);
 
 	//console.log(tableCont, table)
+} 
+
+function restart() {
+	jQuery('.steps').hide();
+	jQuery('.step1').show();
+	jQuery('.error').text("").hide();
+	jQuery('.step_restart').hide();
+	if (table && table.length > 0) {
+		table.remove();
+	}
 }
 
 window.onload = function() {
-	input= document.getElementById("myInput")
-	bload = document.getElementById("btn_load")
-	bparse = document.getElementById("btn_parse")
-	bcalc = document.getElementById("btn_calc")
-	bload.addEventListener('click', handleFile, false)
-	bparse.addEventListener('click', loadData, false)
-	bcalc.addEventListener('click', calc, false)
+	input = document.getElementById("myInput")
+	jQuery('#btn_load').click(function(){
+		var err = handleFile();
+		if(err !== true){
+			jQuery('.error').text("ошибка: " + err).show();
+			return;
+		}
+		jQuery('.error').hide();
+		jQuery('.steps').hide();
+		jQuery('.step2').show();
+		jQuery('.step_restart').show();
+	});
+	jQuery('#btn_parse').click(function(){
+		err = parseXls();
+		if(err !== true){
+			jQuery('.error').text("ошибка парсинга файла: " + err).show();
+			return;
+		}
+		jQuery('.error').hide();
+		printResults();
 
-	tableCont = jQuery("#table_cont")
+		jQuery('.steps').hide();
+		jQuery('.step3').show();
+	});
+	jQuery('#btn_calc').click(function(){
+		calc();
+		jQuery('.steps').hide();
+	});
+	jQuery('#btn_restart').click(function(){
+		restart();
+	});
+
+	tableCont = jQuery("#table_cont");
+	restart();
 	console.log("init!")
 }
