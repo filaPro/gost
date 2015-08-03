@@ -1,8 +1,9 @@
-var bload, input;
-var argsList = [], resultList = [];
+var input;
+var argsList, resultList, statementList;
 var argsHeader = [], blocksHeader = [];
 var workbook, sheet;
 var tableCont, table;
+var step = 0
 
 
 function Args(id, arr) {
@@ -157,6 +158,54 @@ function BlocksSet(id, block) {
 
 		return res
 	}
+	this.applyCompact = function(){
+		console.log("compact", JSON.stringify(this.plus))
+		while (1) {
+			var changed = false;
+			for (var i = 0; i < this.plus.length; i ++) {
+				for (var j = parseInt(i) + 1; j < this.plus.length; j ++) {
+					var eq = 0;
+					var dnum = -1;
+					var a = this.plus[i];
+					var b = this.plus[j];
+					console.log("loop", i, j, a, b)
+					for (var k in a.coords){
+						if (a.coords[k].toString() == b.coords[k].toString())
+							eq ++;
+						else
+							dnum = k;
+					}
+					if(eq == a.coords.length - 1){
+						var m = null, M = null;
+						if(a.coords[dnum][0] == b.coords[dnum][1]){
+							m = b.coords[dnum][0];
+							M = a.coords[dnum][1];
+						}
+						if(a.coords[dnum][1] == b.coords[dnum][0]){
+							m = a.coords[dnum][0];
+							M = b.coords[dnum][1];
+						}
+						if(m != null && M != null){
+							console.log("merge: ", JSON.stringify(a.coords), JSON.stringify(b.coords), i, j, this.plus.length, a.coords[dnum], b.coords[dnum], [m, M])
+							console.log(JSON.stringify(this.plus))
+							var arr = a.coords;
+							arr[dnum] = [m, M];
+							this.plus.push(new Block(arr));
+							this.plus.splice(j, 1);
+							this.plus.splice(i, 1);
+							console.log(JSON.stringify(this.plus))
+							j--;
+
+							changed = true;
+						}
+					}
+				}
+			}
+			
+			if(!changed)
+				break;
+		}
+	}
 }
 
 function getCell(sheet, x, y) {
@@ -224,7 +273,7 @@ function parseXls() {
 		blocksHeader.push(q);
 	}
 
-	argsList = [], resultList = [];
+	argsList = [], statementList = [], resultList = [];
 	var yMin = baseArgs.r + 3; 
 	loop1:
 	for (var y = yMin; y <= range.e.r; y++) {
@@ -239,6 +288,7 @@ function parseXls() {
 	}
 	for (var y = yMin; y <= range.e.r; y++) {
 		var arr = [];
+
 		for (var x = baseBlocks.c; x < endBlocks.c; x += 2) {
 			var min = getCell(sheet, x, y);
 			var max = getCell(sheet, x + 1, y);
@@ -246,7 +296,11 @@ function parseXls() {
 				return 'неверный формат данных в диапазоне ' + XLSX.utils.encode_cell({c : x, r : y}) + ':' + XLSX.utils.encode_cell({c : x + 1, r : y});
 			arr.push([getCell(sheet, x, y), getCell(sheet, x + 1, y)]);
 		}
+		statementList.push(new BlocksSet(y - yMin, arr));
 		resultList.push(new BlocksSet(y - yMin, arr));
+
+		if (statementList.length >= argsList.length)
+			break;
 	}
 
 	return true;
@@ -282,6 +336,10 @@ function calc(){
 		resultList[i].applyMinus();
 	console.log("resultList", resultList);
 
+	for (var i in resultList)
+		resultList[i].applyCompact();
+
+	step = 4
 	printResults();
 }
 
@@ -305,6 +363,14 @@ function printResults(){
 				str += "\"" + blocksHeader[y][x] + "\"";
 			}
 			jQuery("<th>").text(str).appendTo(row);
+			if(step > 3){
+				str = "[" + str + "] или ...";
+				jQuery("<th>").text(str).appendTo(row);
+			}
+		}else{
+			jQuery("<th>").text("").appendTo(row);
+			if(step > 3)
+				jQuery("<th>").text("").appendTo(row);
 		}
 
 		table.append(row);
@@ -316,7 +382,13 @@ function printResults(){
 		for (var x in a.arr)
 			jQuery("<td>").text(a.arr[x]).appendTo(row);
 
-		jQuery("<td>").text(resultList[y].toString()).appendTo(row);
+		jQuery("<td>").text(statementList[y].toString()).appendTo(row);
+		if(step > 3){
+			var text = resultList[y].toString();
+			if(text == "")
+				text = "Нет вариантов"
+			jQuery("<td>").text(text).appendTo(row);
+		}
 
 		table.append(row);
 	}
@@ -334,6 +406,7 @@ function restart() {
 	if (table && table.length > 0) {
 		table.remove();
 	}
+	step = 0
 }
 
 window.onload = function() {
