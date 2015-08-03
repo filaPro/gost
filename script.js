@@ -199,6 +199,9 @@ function parseXls() {
 					break loop;
 				}
 			}
+	if (!endArgs && baseArgs)
+		endArgs = baseArgs;
+
 	if (!baseArgs || !endArgs || !baseBlocks || !endBlocks)
 		return 'Якоря не найдены. Расставьте #args, #args_end, #blocks, #blocks_end. Все якоря должны быть в одной строчке, между которой и первой строчкой данных расположены 2 строки заголовков.';
 	if (baseArgs.r != baseBlocks.r)
