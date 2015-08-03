@@ -200,9 +200,9 @@ function parseXls() {
 				}
 			}
 	if (!baseArgs || !endArgs || !baseBlocks || !endBlocks)
-		return 'anchors not found';
+		return 'Якоря не найдены. Расставьте #args, #args_end, #blocks, #blocks_end. Все якоря должны быть в одной строчке, между которой и первой строчкой данных расположены 2 строки заголовков.';
 	if (baseArgs.r != baseBlocks.r)
-		return 'wrong positions of anchors';
+		return 'Неверные позиции якорей.';
 
 	argsHeader = [], blocksHeader = [];
 	for (var y = baseArgs.r + 1; y <= baseArgs.r + 2; y++){
@@ -236,8 +236,13 @@ function parseXls() {
 	}
 	for (var y = yMin; y <= range.e.r; y++) {
 		var arr = [];
-		for (var x = baseBlocks.c; x < endBlocks.c; x += 2)
+		for (var x = baseBlocks.c; x < endBlocks.c; x += 2) {
+			var min = getCell(sheet, x, y);
+			var max = getCell(sheet, x + 1, y);
+			if (typeof(min) != 'number' || typeof(max) != 'number' || min > max)
+				return 'неверный формат данных в диапазоне ' + XLSX.utils.encode_cell({c : x, r : y} + ':' XLSX.utils.encode_cell({c : x + 1, r : y});
 			arr.push([getCell(sheet, x, y), getCell(sheet, x + 1, y)]);
+		}
 		resultList.push(new BlocksSet(y - yMin, arr));
 	}
 
@@ -260,7 +265,7 @@ function handleFile(e) {
 function loadData(){
 	err = parseXls();
 	if(err !== true){
-		alert("parsing error:" + err);
+		alert("ошибка парсинга файла: " + err);
 		return;
 	}
 
